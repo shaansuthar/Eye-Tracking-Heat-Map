@@ -1,9 +1,14 @@
+import sys
 import adhawkapi
 import adhawkapi.frontend
 import cv2
+from screen_tracking import TrackingWindow
+from PySide2 import QtCore, QtGui, QtWidgets
 
 
 def main():
+    app = QtWidgets.QApplication(sys.argv)
+    TrackingWindow()
     api = adhawkapi.frontend.FrontendApi()
     api.start(connect_cb=on_connect, disconnect_cb=on_disconnect)
 
@@ -24,7 +29,9 @@ def main():
 
 
     # Terminate communication
-    api.shutdown()    
+    api.shutdown()  
+
+    sys.exit(app.exec_())  
 
 def on_connect(error):
     if not error:
