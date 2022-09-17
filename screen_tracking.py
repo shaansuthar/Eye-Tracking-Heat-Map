@@ -37,7 +37,7 @@ class Frontend:
 
         # Tell the api that we wish to tap into the GAZE_IN_SCREEN in screen data stream
         # with the given handle_gaze_in_screen_stream as the handler
-        self._api.register_stream_handler(PacketType.GAZE_IN_SCREEN, handle_gaze_in_screen_stream)
+        print(self._api.register_stream_handler(PacketType.GAZE_IN_SCREEN, handle_gaze_in_screen_stream))
 
         # Tell the api that we wish to tap into the EVENTS stream
         # with self._handle_event_stream as the handler
@@ -362,8 +362,13 @@ def main():
     ''' Main function '''
     app = QtWidgets.QApplication(sys.argv)
     TrackingWindow()
+
+    front_end = Frontend(adhawkapi.PacketType.GAZE_IN_SCREEN, handler)
+
     sys.exit(app.exec_())
 
+def handler(*data):
+    timestamp, xpos, ypos = data
 
 if __name__ == '__main__':
     main()
