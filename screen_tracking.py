@@ -15,6 +15,7 @@ from PIL import Image
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 # This example requires the PySide2 library for displaying windows and video. Other such libraries are avaliable, and
 # you are free to use whatever you'd like for your projects.
@@ -26,13 +27,13 @@ from adhawkapi.publicapi import Events, MarkerSequenceMode, PacketType
 
 
 GAZE_MARKER_SIZE = 20
-LOG_RATE = 10
+LOG_RATE = 60
 IS_RECORDING = False
 
 START_KEY = 'r'
 STOP_KEY = 's'
 
-CELL_SIZE = 60
+CELL_SIZE = 10
 
 class Frontend:
     '''
@@ -175,7 +176,6 @@ class TrackingWindow(QtWidgets.QWidget):
         self._screen_size = np.array([QtWidgets.QApplication.instance().primaryScreen().geometry().width(),
                                       QtWidgets.QApplication.instance().primaryScreen().geometry().height()])
 
-        self._data = []
         self._matrix = self.init_matrix()
         # Gets the screen size in mm and outputs all screen information to the console
         self._screen_size_mm = self._pix_to_mm(self._screen_size)
@@ -204,7 +204,10 @@ class TrackingWindow(QtWidgets.QWidget):
 
         # Example background layer / widget
         background_widget = QtWidgets.QLabel()
-        background_widget.setStyleSheet("background-color:lightblue")
+        pixmap = QtGui.QPixmap('./controversy.png')
+        background_widget.frameSize()
+        background_widget.setPixmap(pixmap)
+        background_widget.show()
 
         layout = QtWidgets.QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -288,7 +291,11 @@ class TrackingWindow(QtWidgets.QWidget):
         if (keyboard.is_pressed(STOP_KEY)):
             IS_RECORDING = False
             print("Recording stopped")
-            
+
+            df = pd.DataFrame(self._matrix, columns=['x', 'y'])
+
+            df_cnt = df.reset_index().pivot(columns='x', values='y').fillna(0, inplace=Tru)
+
             h = sns.heatmap(df_cnt, alpha=0.1, zorder=2)
 
             heatmap_img = mpimg.imread("./controversy.png")
