@@ -246,7 +246,7 @@ class TrackingWindow(QtWidgets.QWidget):
         self.frontend = Frontend(self._handle_camera_start_response, self._handle_gaze_in_screen_stream)
 
         self._setup_video_timer()
-    
+
     def get_position(self):
         return self.x_coord, self.y_coord
 
@@ -281,7 +281,7 @@ class TrackingWindow(QtWidgets.QWidget):
         self._xcoord = self._running_xcoord / len(self._point_deque)
         self._ycoord = self._running_ycoord / len(self._point_deque)
 
-        
+
         # Start recording
         if (keyboard.is_pressed(START_KEY)):
             IS_RECORDING = True
@@ -299,7 +299,7 @@ class TrackingWindow(QtWidgets.QWidget):
             h = sns.heatmap(df_cnt, alpha=0.1, zorder=2)
 
             heatmap_img = mpimg.imread("./controversy.png")
-            
+
             h.imshow(heatmap_img,
                     aspect=h.get_aspect(),
                     extent=h.get_xlim() + h.get_ylim(),
@@ -315,8 +315,8 @@ class TrackingWindow(QtWidgets.QWidget):
         print("Matrix size: ", matrix_width, matrix_height)
 
         matrix = np.zeros((matrix_width,matrix_height), dtype=int)
-        return matrix 
-        
+        return matrix
+
     def _every_frame(self):
         if not self._xcoord or not self._ycoord:
             return
@@ -340,7 +340,7 @@ class TrackingWindow(QtWidgets.QWidget):
        cell_x, cell_y = self.get_cell(int(x), int(y))
        self._matrix[cell_x][cell_y] += 1
        print("Recording: ", cell_x, cell_y, self._matrix[cell_x][cell_y])
-       
+
 
     def get_cell(self, x, y):
         global CELL_SIZE
