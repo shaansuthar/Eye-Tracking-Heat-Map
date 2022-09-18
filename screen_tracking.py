@@ -3,6 +3,8 @@ Display a gaze marker inside a screen.
 Demonstates how to create a window which displays markers and map gaze data into the given window
 '''
 
+from audioop import minmax
+from decimal import Clamped
 import math
 import sys
 from collections import deque
@@ -20,6 +22,7 @@ import pandas as pd
 # This example requires the PySide2 library for displaying windows and video. Other such libraries are avaliable, and
 # you are free to use whatever you'd like for your projects.
 from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2.QtCore import Qt
 
 import adhawkapi
 import adhawkapi.frontend
@@ -33,7 +36,7 @@ IS_RECORDING = False
 START_KEY = 'r'
 STOP_KEY = 's'
 
-CELL_SIZE = 10
+CELL_SIZE = 75
 
 class Frontend:
     '''
@@ -204,10 +207,26 @@ class TrackingWindow(QtWidgets.QWidget):
 
         # Example background layer / widget
         background_widget = QtWidgets.QLabel()
-        pixmap = QtGui.QPixmap('./controversy.png')
-        background_widget.frameSize()
+        #pixmap = QtGui.QPixmap('./youtube.png')
+        pixmap = QtGui.QPixmap('./youtube1.png')
+        #pixmap.scaled(20, 20, aspectMode=Qt.IgnoreAspectRatio, mode=Qt.FastTransformation)
+        # pixmap = QtGui.QPixmap(self._screen_size[0], self._screen_size[1])
+        # pixmap.convertFromImage('./youtube.com.png')
+
+        # background_widget.setStyleSheet("scale: 50%;") 
+
+        background_widget.setGeometry(0, 0, self._screen_size[0], self._screen_size[1])            # Set the size of Qlabel to size of the screen
+
+        background_widget.setWindowTitle('App')
+        background_widget.setAlignment(Qt.AlignTop | Qt.AlignCenter) #https://doc.qt.io/qt-5/qt.html#AlignmentFlag-enum                         
         background_widget.setPixmap(pixmap)
+        background_widget.resize(pixmap.width(), pixmap.height())
         background_widget.show()
+        # bg_size = background_widget.frameSize()
+        # background_widget.setPixmap(pixmap)
+        # # # background_widget.setGeometry(QtWidgets.QApplication.instance().primaryScreen().geometry().width(), QtWidgets.QApplication.instance().primaryScreen().geometry().height())
+        # # background_widget.setGeometry(0,0,bg_size[0],bg_size[1])
+        # background_widget.show()
 
         layout = QtWidgets.QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -292,19 +311,16 @@ class TrackingWindow(QtWidgets.QWidget):
             IS_RECORDING = False
             print("Recording stopped")
 
-            df = pd.DataFrame(self._matrix, columns=['x', 'y'])
+            df = pd.DataFrame(self._matrix)
 
-            df_cnt = df.reset_index().pivot(columns='x', values='y').fillna(0, inplace=Tru)
-
-            h = sns.heatmap(df_cnt, alpha=0.1, zorder=2)
-
-            heatmap_img = mpimg.imread("./controversy.png")
+            h = sns.heatmap(df, alpha=0.8, zorder=2, cmap="YlGnBu")
+            heatmap_img = mpimg.imread("./youtube1.png")
             
             h.imshow(heatmap_img,
                     aspect=h.get_aspect(),
                     extent=h.get_xlim() + h.get_ylim(),
                     zorder = 1)
-            plt.show()
+            plt.savefig('heatmap.png')
 
         if IS_RECORDING:
             self.record(_timestamp, self._xcoord, self._ycoord)
@@ -337,10 +353,15 @@ class TrackingWindow(QtWidgets.QWidget):
         self._marker_widget.setPixmap(pixmap)
 
     def record(self, timestamp, x, y):
+       x = max(0, min(x, self._screen_size[0]))
+       y = max(0, min(y, self._screen_size[1]))
        cell_x, cell_y = self.get_cell(int(x), int(y))
-       self._matrix[cell_x][cell_y] += 1
-       print("Recording: ", cell_x, cell_y, self._matrix[cell_x][cell_y])
-       
+
+       try:
+           self._matrix[cell_x][cell_y] += 1
+           print("Recording: ", cell_x, cell_y, self._matrix[cell_x][cell_y])
+       except IndexError:
+           pass
 
     def get_cell(self, x, y):
         global CELL_SIZE
