@@ -6,10 +6,15 @@ Demonstates how to create a window which displays markers and map gaze data into
 import math
 import sys
 from collections import deque
+import keyboard
 
 import cv2
 import cv2.aruco as aruco # pylint: disable=no-member, import-error
 import numpy as np
+from PIL import Image
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # This example requires the PySide2 library for displaying windows and video. Other such libraries are avaliable, and
 # you are free to use whatever you'd like for your projects.
@@ -21,7 +26,13 @@ from adhawkapi.publicapi import Events, MarkerSequenceMode, PacketType
 
 
 GAZE_MARKER_SIZE = 20
+LOG_RATE = 10
+IS_RECORDING = False
 
+START_KEY = 'r'
+STOP_KEY = 's'
+
+CELL_SIZE = 60
 
 class Frontend:
     '''
@@ -37,7 +48,7 @@ class Frontend:
 
         # Tell the api that we wish to tap into the GAZE_IN_SCREEN in screen data stream
         # with the given handle_gaze_in_screen_stream as the handler
-        self._api.register_stream_handler(PacketType.GAZE_IN_SCREEN, handle_gaze_in_screen_stream)
+        print(self._api.register_stream_handler(PacketType.GAZE_IN_SCREEN, handle_gaze_in_screen_stream))
 
         # Tell the api that we wish to tap into the EVENTS stream
         # with self._handle_event_stream as the handler
@@ -115,7 +126,7 @@ class Frontend:
             print('Backend connected')
 
             # Sets the GAZE_IN_SCREEN data stream rate to 125Hz
-            self._api.set_stream_control(adhawkapi.PacketType.GAZE_IN_SCREEN, 125, callback=(lambda *args: None))
+            self._api.set_stream_control(adhawkapi.PacketType.GAZE_IN_SCREEN, LOG_RATE, callback=(lambda *args: None))
 
             # Tells the api which event streams we want to tap into, in this case the PROCEDURE_START_END stream
             self._api.set_event_control(adhawkapi.EventControlBit.PRODECURE_START_END, 1, callback=(lambda *args: None))
@@ -152,6 +163,7 @@ class TrackingWindow(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self)
         self.setWindowTitle('Screen tracking example')
 
+
         # Gets the screen dpi from Qt's QApplication class
         dpi_x = QtWidgets.QApplication.instance().primaryScreen().physicalDotsPerInchX()
         dpi_y = QtWidgets.QApplication.instance().primaryScreen().physicalDotsPerInchY()
@@ -163,6 +175,8 @@ class TrackingWindow(QtWidgets.QWidget):
         self._screen_size = np.array([QtWidgets.QApplication.instance().primaryScreen().geometry().width(),
                                       QtWidgets.QApplication.instance().primaryScreen().geometry().height()])
 
+        self._data = []
+        self._matrix = self.init_matrix()
         # Gets the screen size in mm and outputs all screen information to the console
         self._screen_size_mm = self._pix_to_mm(self._screen_size)
         print(f'screen info: \n    dpi={self._dpi}\n    size_pix={self._screen_size}\n    size_mm={self._screen_size_mm}')
@@ -229,6 +243,9 @@ class TrackingWindow(QtWidgets.QWidget):
         self.frontend = Frontend(self._handle_camera_start_response, self._handle_gaze_in_screen_stream)
 
         self._setup_video_timer()
+    
+    def get_position(self):
+        return self.x_coord, self.y_coord
 
     def _setup_video_timer(self):
         self._imagetimer_interval = 1000 / 60
@@ -237,6 +254,7 @@ class TrackingWindow(QtWidgets.QWidget):
         self._imagetimer.start(self._imagetimer_interval)
 
     def _handle_gaze_in_screen_stream(self, _timestamp, xpos, ypos):
+        global IS_RECORDING
         ''' Handler for the gaze in screen stream '''
         if math.isnan(xpos) or math.isnan(ypos):
             return
@@ -260,6 +278,38 @@ class TrackingWindow(QtWidgets.QWidget):
         self._xcoord = self._running_xcoord / len(self._point_deque)
         self._ycoord = self._running_ycoord / len(self._point_deque)
 
+        
+        # Start recording
+        if (keyboard.is_pressed(START_KEY)):
+            IS_RECORDING = True
+            print("Recording started")
+
+        # Stop recording
+        if (keyboard.is_pressed(STOP_KEY)):
+            IS_RECORDING = False
+            print("Recording stopped")
+            
+            h = sns.heatmap(df_cnt, alpha=0.1, zorder=2)
+
+            heatmap_img = mpimg.imread("./controversy.png")
+            
+            h.imshow(heatmap_img,
+                    aspect=h.get_aspect(),
+                    extent=h.get_xlim() + h.get_ylim(),
+                    zorder = 1)
+            plt.show()
+
+        if IS_RECORDING:
+            self.record(_timestamp, self._xcoord, self._ycoord)
+
+    def init_matrix(self):
+        global CELL_SIZE
+        matrix_width, matrix_height = self._screen_size[0]//CELL_SIZE, self._screen_size[1]//CELL_SIZE
+        print("Matrix size: ", matrix_width, matrix_height)
+
+        matrix = np.zeros((matrix_width,matrix_height), dtype=int)
+        return matrix 
+        
     def _every_frame(self):
         if not self._xcoord or not self._ycoord:
             return
@@ -278,6 +328,17 @@ class TrackingWindow(QtWidgets.QWidget):
 
         # Sets the new image with the gaze marker ellipse drawn
         self._marker_widget.setPixmap(pixmap)
+
+    def record(self, timestamp, x, y):
+       cell_x, cell_y = self.get_cell(int(x), int(y))
+       self._matrix[cell_x][cell_y] += 1
+       print("Recording: ", cell_x, cell_y, self._matrix[cell_x][cell_y])
+       
+
+    def get_cell(self, x, y):
+        global CELL_SIZE
+        cell_x, cell_y = x//CELL_SIZE, y//CELL_SIZE
+        return cell_x, cell_y
 
     def _handle_camera_start_response(self, error):
         ''' Handler for the camera start response '''
@@ -362,8 +423,8 @@ def main():
     ''' Main function '''
     app = QtWidgets.QApplication(sys.argv)
     TrackingWindow()
-    sys.exit(app.exec_())
 
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
     main()
