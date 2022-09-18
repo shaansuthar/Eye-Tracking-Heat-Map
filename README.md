@@ -74,4 +74,4 @@ There are many things that we can do to improve on this project for the future, 
 
 
 
-Created by: [Shaan Suthar](https://www.linkedin.com/in/shaan-suthar/), [Richard Li](https://www.richard-li.netlify.app), [Maaz Siddiqi](https://www.maaz-siddiqi.nelify.app), and [Nicholas Koenig](https://www.linkedin.com/in/nicholas-e-koenig/)
+Created by: [Shaan Suthar](https://www.linkedin.com/in/shaan-suthar/), [Richard Li](https://www.linkedin.com/in/richardli2003/), [Maaz Siddiqi](https://www.linkedin.com/in/maaz-siddiqi/), and [Nicholas Koenig](https://www.linkedin.com/in/nicholas-e-koenig/)
