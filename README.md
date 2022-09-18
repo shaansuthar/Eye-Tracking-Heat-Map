@@ -27,6 +27,9 @@ To recreate this project you will need the following software:
 - Python 3.8 or newer
 - Pip (package manager)
 
+<img src="https://venturebeat.com/wp-content/uploads/2021/03/adhawk.jpg?w=800&resize=800%2C377&strip=all" title="Adhawk MindLink Eyetracking Glasses" width="100%"/>
+
+
 <h2>Alternative Options (... And Why Our Method Is Better)</h2>
 
 | Analytics Option | Description | Differences |
